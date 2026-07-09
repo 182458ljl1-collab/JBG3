@@ -277,7 +277,7 @@ int main(void)
 
     HAL_GPIO_WritePin(STBY_GPIO_Port, STBY_Pin, GPIO_PIN_SET);
 
-    PID_Init(&motor_pid, 28.0f, 18.0f, 0.0f, -PWM_MAX, PWM_MAX);
+    PID_Init(&motor_pid, 38.0f, 20.0f, 0.0f, -PWM_MAX, PWM_MAX);
 
     Motor_SetPWM(0);
     UART1_SendString("uart1_vofa_start\r\n");

@@ -1,6 +1,6 @@
 #include "pid.h"
 
-#define PID_INTEGRAL_OUTPUT_LIMIT 2200.0f
+#define PID_INTEGRAL_OUTPUT_LIMIT 2800.0f
 
 static float PID_Clamp(float value, float min, float max)
 {
