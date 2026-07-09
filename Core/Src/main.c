@@ -54,9 +54,8 @@
 #define TARGET_RPM_MAX 120.0f
 #define VOFA_RPM_SCALE  100.0f
 #define VOFA_ERR_SCALE  100.0f
-#define RPM_FILTER_ALPHA 0.20f
-#define PWM_STEP_UP_MAX    55.0f
-#define PWM_STEP_DOWN_MAX 140.0f
+#define RPM_FILTER_ALPHA 0.25f
+#define PWM_STEP_MAX     80.0f
 
 PID_t motor_pid;
 
@@ -277,7 +276,7 @@ int main(void)
 
     HAL_GPIO_WritePin(STBY_GPIO_Port, STBY_Pin, GPIO_PIN_SET);
 
-    PID_Init(&motor_pid, 38.0f, 20.0f, 0.0f, -PWM_MAX, PWM_MAX);
+    PID_Init(&motor_pid, 25.0f, 10.0f, 0.0f, -PWM_MAX, PWM_MAX);
 
     Motor_SetPWM(0);
     UART1_SendString("uart1_vofa_start\r\n");
@@ -359,13 +358,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         else
         {
             pid_pwm = PID_Update(&motor_pid, target_rpm, actual_rpm, PID_DT);
-            if (pid_pwm > motor_pwm + PWM_STEP_UP_MAX)
+            if (pid_pwm > motor_pwm + PWM_STEP_MAX)
             {
-                motor_pwm += PWM_STEP_UP_MAX;
+                motor_pwm += PWM_STEP_MAX;
             }
-            else if (pid_pwm < motor_pwm - PWM_STEP_DOWN_MAX)
+            else if (pid_pwm < motor_pwm - PWM_STEP_MAX)
             {
-                motor_pwm -= PWM_STEP_DOWN_MAX;
+                motor_pwm -= PWM_STEP_MAX;
             }
             else
             {
