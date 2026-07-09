@@ -56,6 +56,9 @@
 #define VOFA_ERR_SCALE  100.0f
 #define RPM_FILTER_ALPHA 0.25f
 #define PWM_STEP_MAX     80.0f
+#define SPEED_FF_OFFSET 330.0f
+#define SPEED_FF_GAIN   158.0f
+#define PID_CORRECTION_MAX 600.0f
 
 PID_t motor_pid;
 
@@ -93,6 +96,27 @@ static float ClampFloat(float value, float min, float max)
     if (value < min)
         return min;
     return value;
+}
+
+static float Speed_FeedForward(float rpm)
+{
+    float abs_rpm;
+    float pwm;
+
+    if (rpm > -0.01f && rpm < 0.01f)
+    {
+        return 0.0f;
+    }
+
+    abs_rpm = rpm > 0.0f ? rpm : -rpm;
+    pwm = SPEED_FF_OFFSET + SPEED_FF_GAIN * abs_rpm;
+
+    if (rpm < 0.0f)
+    {
+        pwm = -pwm;
+    }
+
+    return ClampFloat(pwm, -PWM_MAX, PWM_MAX);
 }
 
 void Motor_SetPWM(float pwm)
@@ -276,7 +300,7 @@ int main(void)
 
     HAL_GPIO_WritePin(STBY_GPIO_Port, STBY_Pin, GPIO_PIN_SET);
 
-    PID_Init(&motor_pid, 25.0f, 10.0f, 0.0f, -PWM_MAX, PWM_MAX);
+    PID_Init(&motor_pid, 25.0f, 5.0f, 0.0f, -PID_CORRECTION_MAX, PID_CORRECTION_MAX);
 
     Motor_SetPWM(0);
     UART1_SendString("uart1_vofa_start\r\n");
@@ -357,7 +381,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         }
         else
         {
-            pid_pwm = PID_Update(&motor_pid, target_rpm, actual_rpm, PID_DT);
+            pid_pwm = Speed_FeedForward(target_rpm) + PID_Update(&motor_pid, target_rpm, actual_rpm, PID_DT);
+            pid_pwm = ClampFloat(pid_pwm, -PWM_MAX, PWM_MAX);
             if (pid_pwm > motor_pwm + PWM_STEP_MAX)
             {
                 motor_pwm += PWM_STEP_MAX;
